@@ -6,6 +6,7 @@ import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 
 const Dashboard = () => {
+    const API_URL = import.meta.env.VITE_API_URL;
     const [attendance, setAttendance] = useState([]);
     const [students, setStudents] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
@@ -26,7 +27,7 @@ const Dashboard = () => {
         const recognizedAtInput = document.querySelector('input[name="recognizedAt"]').value;
 
         try {
-            const res = await axios.post("http://localhost:5001/api/attendance", {
+            const res = await axios.post(`${API_URL}/api/attendance`, {
                 name,
                 usn,
                 course,
@@ -44,7 +45,7 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchAttendance = async () => {
             try {
-                const response = await axios.get('http://localhost:5001/api/attendance');
+                const response = await axios.get(`${API_URL}/api/attendance`);
                 setAttendance(response.data);
             } catch (err) {
                 console.error("Error fetching attendance:", err);
@@ -53,7 +54,7 @@ const Dashboard = () => {
 
         const fetchStudents = async () => {
             try {
-                const response = await axios.get('http://localhost:5001/api/students');
+                const response = await axios.get(`${API_URL}/api/students`);
                 setStudents(response.data);
             } catch (err) {
                 console.error("Error fetching students:", err);

@@ -2,14 +2,16 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const connectDB = require('./config/db');
+require('dotenv').config();
 
 const app = express();
-const PORT = 5001;
+const PORT = process.env.PORT || 5001;
+const allowed_origin = process.env.ORIGIN_URL || "http://localhost:5173";
 
 connectDB();
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: allowed_origin,
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));

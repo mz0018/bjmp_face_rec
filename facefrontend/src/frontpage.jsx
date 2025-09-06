@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 
 const Front = () => {
+  const API_URL = import.meta.env.VITE_API_URL;
   const [recognizedName, setRecognizedName] = useState("USN will appear here");
   const [recognizedStudentName, setRecognizedStudentName] = useState("Name will appear here");
   const [attendanceMessage, setAttendanceMessage] = useState(""); 
@@ -13,7 +14,7 @@ const Front = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await axios.get("http://localhost:5001/api/students");
+        const response = await axios.get(`${API_URL}/api/students`);
         setStudents(response.data);
       } catch (err) {
         console.error("Error fetching students:", err);
@@ -43,7 +44,7 @@ const Front = () => {
     const imageData = canvas.toDataURL("image/jpeg");
   
     try {
-      const response = await axios.post("http://localhost:5001/api/recognize", { image: imageData });
+      const response = await axios.post(`${API_URL}/api/recognize`, { image: imageData });
       const usn = response.data.usn;
   
       setRecognizedName(usn);
@@ -65,7 +66,7 @@ const Front = () => {
   
       // Submit period-wise attendance
       try {
-        const res = await axios.post("http://localhost:5001/api/periodwise-attendance", {
+        const res = await axios.post(`${API_URL}/api/periodwise-attendance`, {
           usn,
           recognizedAt
         });

@@ -5,6 +5,7 @@ import axios from 'axios';
 import React, { useState, useEffect, useRef } from 'react';
 
 const Addstudent = () => {
+  const API_URL = import.meta.env.VITE_API_URL;
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -58,7 +59,7 @@ const Addstudent = () => {
       const imageData = canvas.toDataURL('image/jpeg');
 
       try {
-        const response = await fetch('http://localhost:5000/enroll', {
+        const response = await fetch(`http://localhost:5000/enroll`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ usn: student.usn, image: imageData })
@@ -67,7 +68,7 @@ const Addstudent = () => {
         const result = await response.json();
         alert(result.message);
 
-        const dataResponse = await fetch('http://localhost:5001/api/students', {
+        const dataResponse = await fetch(`${API_URL}/api/students`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(student)

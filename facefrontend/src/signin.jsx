@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
 const Signin = ({ classname }) => {
+    const API_URL = import.meta.env.VITE_API_URL;
     const [authMode, setAuthMode] = useState("login");
     const handleSignup = async () => {
         const username = document.querySelector("#signup-username").value;
@@ -15,7 +16,7 @@ const Signin = ({ classname }) => {
         }
 
         try {
-            const response = await fetch("http://localhost:5001/api/admin/signup", {
+            const response = await fetch(`${API_URL}/api/admin/signup`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -40,7 +41,7 @@ const Signin = ({ classname }) => {
         const password = document.querySelector("#signin-password").value;
 
         try {
-            const response = await fetch("http://localhost:5001/api/admin/signin", {
+            const response = await fetch(`${API_URL}/api/admin/signin`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

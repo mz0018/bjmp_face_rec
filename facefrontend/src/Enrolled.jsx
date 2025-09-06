@@ -5,6 +5,7 @@ import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 
 const Enrolled = () => {
+  const API_URL = import.meta.env.VITE_API_URL;
   const [students, setStudents] = useState([]);
   const [attendanceLogs, setAttendanceLogs] = useState([]);
   const [search, setSearch] = useState('');
@@ -15,8 +16,8 @@ const Enrolled = () => {
     const fetchStudentsAndAttendance = async () => {
       try {
         const [studentsRes, attendanceRes] = await Promise.all([
-          axios.get('http://localhost:5001/api/students'),
-          axios.get('http://localhost:5001/api/attendance'),
+          axios.get(`${API_URL}/api/students`),
+          axios.get(`${API_URL}/api/attendance`),
         ]);
 
         setStudents(studentsRes.data);
