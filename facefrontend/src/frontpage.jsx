@@ -43,7 +43,7 @@ const Front = () => {
     const imageData = canvas.toDataURL("image/jpeg");
   
     try {
-      const response = await axios.post("http://localhost:5001/recognize", { image: imageData });
+      const response = await axios.post("http://localhost:5001/api/recognize", { image: imageData });
       const usn = response.data.usn;
   
       setRecognizedName(usn);

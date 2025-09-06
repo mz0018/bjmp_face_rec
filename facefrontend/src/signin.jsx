@@ -15,7 +15,7 @@ const Signin = ({ classname }) => {
         }
 
         try {
-            const response = await fetch("http://localhost:5001/signup", {
+            const response = await fetch("http://localhost:5001/api/admin/signup", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -40,7 +40,7 @@ const Signin = ({ classname }) => {
         const password = document.querySelector("#signin-password").value;
 
         try {
-            const response = await fetch("http://localhost:5001/signin", {
+            const response = await fetch("http://localhost:5001/api/admin/signin", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

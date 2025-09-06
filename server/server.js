@@ -1,12 +1,12 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-
-const mongoURI = 'mongodb+srv://bjmp_face_recog:LXKGvyAsIaAx32hT@bjmp.kexnzgt.mongodb.net/?retryWrites=true&w=majority&appName=bjmp';
+const connectDB = require('./config/db');
 
 const app = express();
 const PORT = 5001;
+
+connectDB();
 
 app.use(cors({
   origin: "http://localhost:5173",
@@ -16,309 +16,30 @@ app.use(cors({
 
 app.use(express.json({ limit: "50mb" })); 
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
 app.use(bodyParser.json());
 
-mongoose.connect(mongoURI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log("MongoDB connected"))
-.catch((err) => console.error("MongoDB connection error:", err));
-
-
-const studentSchema = new mongoose.Schema({
-  name: String,
-  usn:String,
-  age: String,
-  course: String,
-  phone: String,
-  enrolledAt: { type: Date, default: Date.now }
-});
-
-const Student = mongoose.model('Student', studentSchema);
-
-app.post("/recognize", async (req, res) => {
-  try {
-    const { image } = req.body; // expect base64 string
-    if (!image) {
-      return res.status(400).json({ message: "Image is required for recognition" });
-    }
-
-    console.log("📸 Received image, length:", image.length);
-
-    // TODO: Add real face recognition here
-    // For now, simulate recognition by mapping image → USN
-    const dummyUsn = "12345"; // pretend match found
-
-    console.log("✅ Match found:", dummyUsn);
-
-    res.status(200).json({
-      message: "Match found",
-      usn: dummyUsn
-    });
-  } catch (err) {
-    console.error("Recognition error:", err);
-    res.status(500).json({ message: "Recognition failed" });
-  }
-});
-
-
-app.post('/api/students', async (req, res) => {
-  const { name, usn, age, course, phone } = req.body;
-
-  if (!name ||!usn || !age || !course || !phone) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
-
-  try {
-    const newStudent = new Student({ name, usn, age, course, phone });
-    await newStudent.save();
-    res.status(200).json({ message: "Student saved to database!" });
-  } catch (err) {
-    console.error("Error saving student:", err);
-    res.status(500).json({ message: "Failed to save student" });
-  }
-});
-
-app.get('/api/students', async (req, res) => {
-  try {
-    const students = await Student.find().sort({ enrolledAt: -1 });
-    res.json(students);
-  } catch (err) {
-    console.error("Error fetching students:", err);
-    res.status(500).json({ message: "Failed to fetch students" });
-  }
-});
-
-
-///////////////new log for attence storage////////
-
-app.get('/api/attendance', async (req, res) => {
-  try {
-    const logs = await AttendanceLog.find().sort({ recognizedAt: -1 });
-    res.json(logs);
-  } catch (err) {
-    console.error("Error fetching logs:", err);
-    res.status(500).json({ message: "Failed to fetch attendance logs" });
-  }
-});
-
-
-const attendanceLogSchema = new mongoose.Schema({
-  usn: String,
-  name: String,
-  course: String,
-  recognizedAt: { type: Date, default: Date.now }
-});
-
-const AttendanceLog = mongoose.model('AttendanceLog', attendanceLogSchema);
-
-app.post('/api/attendance', async (req, res) => {
-  const { usn, name, course, recognizedAt } = req.body;
-
-  if (!usn) {
-    return res.status(400).json({ message: "USN is required" });
-  }
-
-  try {
-    let student = await Student.findOne({ usn });
-
-    // If no student found, but name & course provided => allow manual entry
-    if (!student && (!name || !course)) {
-      return res.status(404).json({ message: "Student not found, and insufficient manual data provided" });
-    }
-
-    // Determine the current date (or use recognizedAt if provided)
-    const today = new Date().toISOString().split('T')[0];
-    const recognizedDate = recognizedAt ? new Date(recognizedAt) : new Date();
-
-    // Check for existing attendance on the same day
-    const existingLog = await AttendanceLog.findOne({
-      usn,
-      recognizedAt: {
-        $gte: new Date(today),
-        $lt: new Date(new Date(today).setDate(new Date(today).getDate() + 1))
-      }
-    });
-
-    if (existingLog) {
-      return res.status(400).json({ message: "Attendance already recorded for today" });
-    }
-
-    // Use data from the DB or from manual fields
-    const log = new AttendanceLog({
-      usn,
-      name: student ? student.name : name,
-      course: student ? student.course : course,
-      recognizedAt: recognizedDate
-    });
-
-    await log.save();
-
-    res.status(200).json({ message: "Attendance logged successfully" });
-  } catch (err) {
-    console.error("Error logging attendance:", err);
-    res.status(500).json({ message: "Failed to log attendance" });
-  }
-});
-
-
-
-///////////////////////admin login and signup///////////
-const AdminSchema = new mongoose.Schema({
-  username: String,
-  email: String,
-  password: String,
-});
-
-const Admin = mongoose.model("Admin", AdminSchema);
-
-
-app.post("/signup", async (req, res) => {
-  const { username, email, password } = req.body;
-
-  try {
-    const existingAdmin = await Admin.findOne({ email });
-    if (existingAdmin) {
-      return res.status(400).json({ message: "Email already registered" });
-    }
-
-    const newAdmin = new Admin({
-      username,
-      email,
-      password, // no hashing
-    });
-
-    await newAdmin.save();
-    res.status(201).json({ message: "Admin created successfully" });
-  } catch (err) {
-    console.error("Signup error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-/////////////////signin.///////
-app.post("/signin", async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const admin = await Admin.findOne({ email });
-
-    if (!admin) {
-      return res.status(404).json({ message: "Admin not found" });
-    }
-
-    if (admin.password !== password) {
-      return res.status(401).json({ message: "Invalid password" });
-    }
-
-    res.status(200).json({ message: "Signin successful", admin: { username: admin.username, email: admin.email } });
-  } catch (err) {
-    console.error("Signin error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-
-const periodwiseAttendanceLogSchema = new mongoose.Schema({
-  usn: String,
-  name: String,
-  course: String,
-  period: String,
-  recognizedAt: { type: Date, default: Date.now }
-});
-
-const PeriodwiseAttendanceLog = mongoose.model('PeriodwiseAttendanceLog', periodwiseAttendanceLogSchema);
-
-app.post('/api/periodwise-attendance', async (req, res) => {
-  const { usn, recognizedAt } = req.body;
-
-  console.log("Incoming data:", req.body); // 🔍 Debugging
-
-  if (!usn) {
-    return res.status(400).json({ message: "USN is required" });
-  }
-
-  try {
-    const student = await Student.findOne({ usn });
-
-    if (!student) {
-      console.log("Student not found");
-      return res.status(404).json({ message: "Student not found" });
-    }
-
-    const now = recognizedAt ? new Date(recognizedAt) : new Date();
-    const period = getPeriodForCurrentTime(now);
-
-    console.log("Calculated period:", period); // 🔍
-
-    if (period === 'No Period') {
-      return res.status(400).json({ message: "No valid class period at this time" });
-    }
-
-    const today = new Date(now.toISOString().split('T')[0]);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    const existingLog = await PeriodwiseAttendanceLog.findOne({
-      usn,
-      period,
-      recognizedAt: { $gte: today, $lt: tomorrow }
-    });
-
-    if (existingLog) {
-      return res.status(400).json({ message: `Attendance already recorded for ${period} today` });
-    }
-
-    const log = new PeriodwiseAttendanceLog({
-      usn,
-      name: student.name,
-      course: student.course,
-      period,
-      recognizedAt: now
-    });
-
-    await log.save();
-    console.log("Successfully saved period-wise attendance:", log); // 🔍
-
-    res.status(200).json({ message: `Period-wise attendance recorded for ${period}`, log });
-
-  } catch (err) {
-    console.error("Error logging periodwise attendance:", err);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-
-
-
-function getPeriodForCurrentTime(currentTime) {
-  const hours = currentTime.getHours();
-  const minutes = currentTime.getMinutes();
-
-  if (hours === 9) return 'Java';
-  if (hours === 10 && minutes >= 10) return 'Python';
-  if (hours === 11 && minutes >= 20) return 'Networking';
-  if (hours === 12 && minutes >= 30) return 'AI/ML';
-  if (hours === 18 && minutes >= 30) return 'React'; // 6:30 PM - 7:30 PM
-
-  return 'No Period';
-}
-
-app.get('/api/periodwise-attendance', async(req,res)=>{
-try{
-  const logs=await PeriodwiseAttendanceLog.find().sort({recognizedAt:-1});
-res.json(logs);
-}catch{
-  console.log("Error fetching periodwise logs:", err);
-  res.status(500).json({ message: "Failed to fetch periodwise attendance logs" });
-}
-});
-
-
-
-
+const adminRoutes = require('./routes/admin');
+const visitorsRoutes = require('./routes/visitors');
+const attendanceRoutes = require('./routes/attendanceLogs');
+const periodwiseRoutes = require('./routes/periodwiseAttendance');
+const recognizeRoutes = require('./routes/recognize');
+
+app.use('/api/admin', adminRoutes);
+app.use('/api/students', visitorsRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/periodwise-attendance', periodwiseRoutes);
+app.use('/api/recognize', recognizeRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+
+
+
+
+
+
+
+
+
