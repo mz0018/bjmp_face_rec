@@ -1,197 +1,87 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import useSigninHook from "./hooks/useSigninHook";
 
-const Signin = ({ classname }) => {
+const Signin = () => {
     const API_URL = import.meta.env.VITE_API_URL;
-    const [authMode, setAuthMode] = useState("login");
-    const handleSignup = async () => {
-        const username = document.querySelector("#signup-username").value;
-        const email = document.querySelector("#signup-email").value;
-        const password = document.querySelector("#signup-password").value;
-        const retypePassword = document.querySelector("#signup-retype").value;
+    const { authMode, setAuthMode, signup, signin, loading } = useSigninHook(API_URL);
 
-        if (password !== retypePassword) {
-            alert("Passwords do not match!");
-            return;
-        }
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const form = e.target;
 
-        try {
-            const response = await fetch(`${API_URL}/api/admin/signup`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ username, email, password }),
+        if (authMode === "login") {
+            signin({ emailOrUsername: form.email.value, password: form.password.value });
+        } else {
+            signup({
+                username: form.username.value,
+                email: form.email.value,
+                password: form.password.value,
+                retype: form.retype.value,
             });
-
-            const data = await response.json();
-            if (response.ok) {
-                alert("Signup successful!");
-            } else {
-                alert(data.message);
-            }
-        } catch (err) {
-            alert("Something went wrong!");
-            console.error(err);
         }
     };
-
-    const handleSignin = async () => {
-        const emailOrUsername = document.querySelector("#signin-email").value;
-        const password = document.querySelector("#signin-password").value;
-
-        try {
-            const response = await fetch(`${API_URL}/api/admin/signin`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    email: emailOrUsername,
-                    password,
-                }),
-            });
-
-            const data = await response.json();
-            if (response.ok) {
-                alert("Signin successful!");
-
-                window.location.href = "/dashboard";
-            } else {
-                alert(data.message);
-            }
-        } catch (err) {
-            alert("Signin failed!");
-            console.error(err);
-        }
-    };
-
 
     return (
-        <div className="mx-auto flex h-screen max-w-lg flex-col md:max-w-none md:flex-row md:pr-10">
-            <div className="max-w-[50rem] rounded-3xl bg-gradient-to-t from-blue-700 via-blue-700 to-blue-600 px-4 py-10 text-white sm:px-10 md:m-6 md:mr-8">
-                <p className="mb-20 font-bold tracking-wider">College Admin Panel</p>
-                <p className="mb-4 text-3xl font-bold md:text-4xl md:leading-snug">
-                    Welcome to <br />
-                    <span className="text-yellow-300">TechBeedi College Mangalore</span>
-                </p>
-                <p className="mb-28 font-semibold leading-relaxed text-gray-200">
-Admin Pannel
-                </p>
-                <div className="bg-blue-600/80 rounded-2xl px-6 py-8">
-                    <p className="mb-3 text-gray-200">
-                    "An Admin Panel for the Attendance Management System, designed to efficiently track and manage student data."
-                    </p>
-                    <div className="flex items-center">
+        <main className="max-w-md mx-auto p-6 mt-10 border rounded shadow-md bg-white">
+            <h1 className="text-2xl font-bold mb-4 text-center">
+                {authMode === "login" ? "Admin Login" : "Admin Signup"}
+            </h1>
 
-                        <p className="">
-                            <strong className="block text-yellow-300 font-medium">Department Of Computer Science</strong>
-                            <span className="text-xs text-gray-200"> Guide : Roronoa Zoro </span>
-                        </p>
-                    </div>
-                </div>
+            {/* Mode Toggle */}
+            <div className="flex justify-center gap-4 mb-4">
+                <button
+                    type="button"
+                    onClick={() => setAuthMode("login")}
+                    className={`px-4 py-2 rounded ${authMode === "login" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"}`}
+                >
+                    Login
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setAuthMode("signup")}
+                    className={`px-4 py-2 rounded ${authMode === "signup" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"}`}
+                >
+                    Signup
+                </button>
             </div>
-            <div className="w-full flex items-center justify-center">
 
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                {authMode === "signup" && (
+                    <>
+                        <label htmlFor="username">Username</label>
+                        <input type="text" id="username" name="username" placeholder="Enter username" required className="border px-2 py-1 rounded" />
+                    </>
+                )}
 
-                <div className="px-4 py-20 mt-0 ">
-                    <h2 className="mb-2 text-3xl font-bold">{authMode === "login" ? "Admin Login" : "Admin Signup"}</h2>
-                    <p className="mb-1 font-medium text-gray-500">Select Mode</p>
+                <label htmlFor="email">{authMode === "login" ? "Email or Username" : "Email"}</label>
+                <input
+                    type="text"
+                    id="email"
+                    name="email"
+                    placeholder={authMode === "login" ? "Enter email or username" : "Enter email"}
+                    required
+                    className="border px-2 py-1 rounded"
+                />
 
-                    <div className="mb-6 flex flex-col gap-y-2 gap-x-4 lg:flex-row">
-                        <div
-                            onClick={() => setAuthMode("login")}
-                            className={`relative flex w-56 items-center justify-center rounded-xl px-4 py-3 font-medium cursor-pointer ${authMode === "login" ? "bg-blue-200 text-blue-800" : "bg-gray-50 text-gray-700"
-                                }`}
-                        >
-                            <span>Login</span>
-                        </div>
-                        <div
-                            onClick={() => setAuthMode("signup")}
-                            className={`relative flex w-56 items-center justify-center rounded-xl px-4 py-3 font-medium cursor-pointer ${authMode === "signup" ? "bg-blue-200 text-blue-800" : "bg-gray-50 text-gray-700"
-                                }`}
-                        >
-                            <span>Signup</span>
-                        </div>
-                    </div>
+                <label htmlFor="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter password" required className="border px-2 py-1 rounded" />
 
-                    {authMode === "login" ? (
-                        <>
-                            <p className="mb-1 font-medium text-gray-500">Email</p>
-                            <div className="mb-4">
-                                <input
-                                    type="text"
-                                    id="signin-email"
-                                    className="w-full rounded-md border-2 border-gray-300 px-4 py-2"
-                                    placeholder="Enter your email or username"
-                                    required
-                                />
-                            </div>
-                            <p className="mb-1 font-medium text-gray-500">Password</p>
-                            <div className="mb-4">
-                                <input
-                                    type="password"
-                                    id="signin-password"
-                                    className="w-full rounded-md border-2 border-gray-300 px-4 py-2"
-                                    placeholder="Enter your password"
-                                    required
-                                />
-                            </div>
-                            <button
-                                onClick={handleSignin}
-                                className="w-full rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 px-8 py-3 font-bold text-white transition-all hover:opacity-90 hover:shadow-lg"
-                            >
-                                Sign In
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <p className="mb-1 font-medium text-gray-500">Username</p>
-                            <div className="mb-4">
-                                <input
-                                    type="text"
-                                    id="signup-username"
-                                    className="w-full rounded-md border-2 border-gray-300 px-4 py-2"
-                                    placeholder="Enter your username"
-                                />
-                            </div>
-                            <p className="mb-1 font-medium text-gray-500">Email</p>
-                            <div className="mb-4">
-                                <input
-                                    type="email"
-                                    id="signup-email"
-                                    className="w-full rounded-md border-2 border-gray-300 px-4 py-2"
-                                    placeholder="Enter your email"
-                                />
-                            </div>
-                            <p className="mb-1 font-medium text-gray-500">Password</p>
-                            <div className="mb-4">
-                                <input
-                                    type="password"
-                                    id="signup-password"
-                                    className="w-full rounded-md border-2 border-gray-300 px-4 py-2"
-                                    placeholder="Enter your password"
-                                    required
-                                />
-                            </div>
-                            <p className="mb-1 font-medium text-gray-500">Retype Password</p>
-                            <div className="mb-4">
-                                <input
-                                    type="password"
-                                    id="signup-retype"
-                                    className="w-full rounded-md border-2 border-gray-300 px-4 py-2"
-                                    placeholder="Retype your password"
-                                    required
-                                />
-                            </div>
-                            <button onClick={handleSignup} className="w-full rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 px-8 py-3 font-bold text-white transition-all hover:opacity-90 hover:shadow-lg">
-                                Sign Up
-                            </button>
-                        </>
-                    )}
-                </div>
-            </div>
-        </div>
+                {authMode === "signup" && (
+                    <>
+                        <label htmlFor="retype">Retype Password</label>
+                        <input type="password" id="retype" name="retype" placeholder="Retype password" required className="border px-2 py-1 rounded" />
+                    </>
+                )}
+
+                <button
+                    type="submit"
+                    className="mt-3 bg-green-500 text-white py-2 rounded hover:bg-green-600"
+                    disabled={loading}
+                >
+                    {loading ? "Processing..." : authMode === "login" ? "Sign In" : "Sign Up"}
+                </button>
+            </form>
+        </main>
     );
 };
 
