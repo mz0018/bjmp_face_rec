@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 const Front = () => {
   const API_URL = import.meta.env.VITE_API_URL;
+  const FLASK_URL = import.meta.env.VITE_FLASK_URL || "http://127.0.0.1:5000";
   const [recognizedName, setRecognizedName] = useState("USN will appear here");
   const [recognizedStudentName, setRecognizedStudentName] = useState("Name will appear here");
   const [attendanceMessage, setAttendanceMessage] = useState(""); 
@@ -44,7 +45,8 @@ const Front = () => {
     const imageData = canvas.toDataURL("image/jpeg");
   
     try {
-      const response = await axios.post(`${API_URL}/api/recognize`, { image: imageData });
+      // const response = await axios.post(`${API_URL}/api/recognize`, { image: imageData });
+      const response = await axios.post(`${FLASK_URL}/recognize`, { image: imageData });
       const usn = response.data.usn;
   
       setRecognizedName(usn);

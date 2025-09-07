@@ -30,7 +30,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/students', visitorsRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/periodwise-attendance', periodwiseRoutes);
-app.use('/api/recognize', recognizeRoutes);
+app.use('/api/recognize', recognizeRoutes); //for testing use dummy account
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
